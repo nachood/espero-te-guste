@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  font-family: 'Poppins', sans-serif;
+  user-select: none;
+  cursor: default;
+}
+
+/* TEXTO ARRIBA */
+#topText {
+  position: fixed;
+  top: 25px;
+  width: 100%;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  color: #ffd1dc;
+  font-size: 26px;
+  letter-spacing: 1px;
+}
+
+/* ❤️ SCORE EN CORAZÓN */
+#scoreContainer {
+  position: fixed;
+  bottom: 25px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+#heartScore {
+  position: relative;
+  font-size: 60px;
+}
+
+#score {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  font-size: 16px;
+  color: white;
+  font-weight: 400;
+}
+
+/* PALABRAS */
+.word {
+  position: absolute;
+  padding: 10px 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.06);
+  font-size: 17px;
+}
+
+.good { color: #9affc9; }
+.bad { color: #ff7a7a; }
+
+.pop { transform: scale(1.3); opacity: 0; }
+.badHit { transform: scale(0.8); opacity: 0; }
+
+/* PARTÍCULAS */
+.float {
+  position: fixed;
+  animation: floatUp 3s linear;
+}
+
+@keyframes floatUp {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-250px); opacity: 0; }
+}
+
+/* OVERLAY */
+#overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: black;
+  opacity: 0;
+  transition: 2s;
+}
+
+/* PANTALLAS */
+#finalScreen, #hugScreen {
+  display: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  color: #ffd1dc;
+  font-family: 'Playfair Display', serif;
+}
+
+#finalText {
+  margin-top: 35%;
+  font-size: 28px;
+}
+
+button {
+  margin-top: 35px;
+  padding: 16px 28px;
+  border-radius: 25px;
+  border: none;
+  background: #ff4d6d;
+  color: white;
+  font-size: 20px;
+}
+
+#hugText {
+  margin-top: 90px;
+  font-size: 20px;
+  line-height: 1.6;
+  padding: 0 20px;
+}
+
+/* ZOOM */
+.zoomIn { animation: zoomIn 1s forwards; }
+.zoomOut { animation: zoomOut 1s forwards; }
+
+@keyframes zoomIn {
+  from { transform: scale(1); }
+  to { transform: scale(1.15); }
+}
+@keyframes zoomOut {
+  from { transform: scale(1.15); }
+  to { transform: scale(1); }
+}
+</style>
+</head>
+
+<body>
+
+<div id="topText">Quiero volver a construir esto con vos</div>
+
+<div id="scoreContainer">
+  <div id="heartScore">
+    ❤️
+    <div id="score">0 / 10</div>
+  </div>
+</div>
+
+<div id="overlay"></div>
+
+<div id="finalScreen">
+  <div id="finalText">Te amo y te prometo no volver a repetirlo</div>
+  <button onclick="goHug()">porfavor tocalo</button>
+</div>
+
+<div id="hugScreen">
+  <div id="hugText">
+    Gracias por perdonar esa falta tonta que te hice dar por mi impulso<br>
+    y perdon por haberte echo sentir nuevamente ese sentimiento feo.<br>
+    Te mando un abrazo mor
+  </div>
+  <button onclick="hug()">Sentir abrazo &lt;3</button>
+</div>
+
+<script>
+
+let score = 0;
+let maxScore = 10;
+let gameActive = true;
+
+let goodWords = ["confianza","t amo","estar presente","no volver a cometer ese error"];
+let badWords = ["distancia","silencio","impulsividad","hacerte sentir sola"];
+
+function updateScore(){
+  document.getElementById("score").innerText = score + " / 10";
+}
+
+/* efectos click */
+function spawnEffect(x, y, type){
+  let el = document.createElement("div");
+  el.className = "float";
+  el.innerText = type === "good" ? "❤️" : "💔";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+
+/* palabras */
+function spawnWord(){
+  if(!gameActive) return;
+
+  let word = document.createElement("div");
+  let isGood = Math.random() > 0.4;
+
+  word.classList.add("word", isGood ? "good" : "bad");
+  word.innerText = isGood 
+    ? goodWords[Math.floor(Math.random()*goodWords.length)]
+    : badWords[Math.floor(Math.random()*badWords.length)];
+
+  word.style.left = Math.random()*80 + "%";
+  word.style.top = "-30px";
+
+  document.body.appendChild(word);
+
+  word.onclick = (e) => {
+    if(!gameActive) return;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if(isGood){
+      score++;
+      word.classList.add("pop");
+      for(let i=0;i<3;i++) spawnEffect(x,y,"good");
+    } else {
+      score -= 2;
+      word.classList.add("badHit");
+      spawnEffect(x,y,"bad");
+    }
+
+    updateScore();
+
+    setTimeout(()=>word.remove(),200);
+
+    if(score >= maxScore){
+      endGame();
+    }
+  };
+
+  let fall = setInterval(()=>{
+    let top = parseFloat(word.style.top);
+    word.style.top = top + 2 + "px";
+
+    if(top > window.innerHeight){
+      word.remove();
+      clearInterval(fall);
+    }
+  },30);
+}
+
+window.onload = () => {
+  setInterval(spawnWord, 1000);
+};
+
+/* ambiente final */
+function ambientEffects(){
+
+  setInterval(()=>{
+    let heart = document.createElement("div");
+    heart.className = "float";
+    heart.innerText = "❤️";
+    heart.style.left = Math.random()*100 + "vw";
+    heart.style.top = (60 + Math.random()*40) + "vh";
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),3000);
+  },600);
+
+  setInterval(()=>{
+    let spark = document.createElement("div");
+    spark.innerText = "✨";
+    spark.className = "float";
+    spark.style.left = Math.random()*100 + "vw";
+    spark.style.top = Math.random()*100 + "vh";
+    document.body.appendChild(spark);
+    setTimeout(()=>spark.remove(),1500);
+  },500);
+}
+
+function endGame(){
+  gameActive = false;
+  document.getElementById("overlay").style.opacity = 1;
+
+  setTimeout(()=>{
+    document.getElementById("finalScreen").style.display = "block";
+    ambientEffects();
+  },2000);
+}
+
+function goHug(){
+  document.getElementById("finalScreen").style.display = "none";
+  document.getElementById("hugScreen").style.display = "block";
+}
+
+function hug(){
+
+  document.body.classList.remove("zoomOut");
+  document.body.classList.add("zoomIn");
+
+  let interval = setInterval(()=>{
+
+    for(let i=0;i<12;i++){
+
+      let el = document.createElement("div");
+      let isText = Math.random() > 0.5;
+
+      el.innerText = isText ? "t amo <3" : "❤️";
+
+      el.className = "float";
+      el.style.left = Math.random()*100 + "vw";
+      el.style.top = (60 + Math.random()*40) + "vh";
+      el.style.color = "#ff9eb5";
+      el.style.fontSize = isText ? "18px" : "22px";
+
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),3000);
+    }
+
+    for(let i=0;i<5;i++){
+      let spark = document.createElement("div");
+      spark.innerText = "✨";
+      spark.className = "float";
+      spark.style.left = Math.random()*100 + "vw";
+      spark.style.top = Math.random()*100 + "vh";
+      document.body.appendChild(spark);
+      setTimeout(()=>spark.remove(),1200);
+    }
+
+  },120);
+
+  setTimeout(()=>{
+    clearInterval(interval);
+    document.body.classList.remove("zoomIn");
+    document.body.classList.add("zoomOut");
+  },2500);
+}
+
+</script>
+
+</body>
+</html>
